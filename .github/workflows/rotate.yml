@@ -13,17 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rotate daily.mp4
+      - name: Download today's full HD video from dance-assets release
         run: |
           python3 - <<'PY'
-          import datetime, shutil, os
+          import datetime, os
           from zoneinfo import ZoneInfo
           now = datetime.datetime.now(ZoneInfo('Asia/Shanghai'))
           vids = ["13943","13944","13945","13946","13947","13948","13949","13950","13951"]
           pick = vids[now.timetuple().tm_yday % len(vids)]
-          src = f"clips/{pick}.mp4"
-          shutil.copyfile(src, "daily.mp4")
-          print("today ->", pick)
+          url = f"https://github.com/PAzzxb/dance-assets/releases/download/v1/{pick}.mp4"
+          print("today ->", pick, url)
+          os.system(f'curl -sL -o daily.mp4 "{url}"')
+          sz = os.path.getsize("daily.mp4")
+          print("daily.mp4 size:", sz//1024//1024, "MB")
+          assert sz > 1000000, "download too small, abort"
           PY
       - name: Commit
         run: |
@@ -33,5 +36,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add daily.mp4
-          git commit -m "rotate daily video"
+          git commit -m "rotate daily video (full HD)"
           git push
