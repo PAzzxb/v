@@ -1,0 +1,37 @@
+name: daily-video-rotate
+
+on:
+  schedule:
+    - cron: '5 16 * * *'      # 每天北京时间 00:05
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rotate daily.mp4
+        run: |
+          python3 - <<'PY'
+          import datetime, shutil, os
+          from zoneinfo import ZoneInfo
+          now = datetime.datetime.now(ZoneInfo('Asia/Shanghai'))
+          vids = ["13943","13944","13945","13946","13947","13948","13949","13950","13951"]
+          pick = vids[now.timetuple().tm_yday % len(vids)]
+          src = f"clips/{pick}.mp4"
+          shutil.copyfile(src, "daily.mp4")
+          print("today ->", pick)
+          PY
+      - name: Commit
+        run: |
+          if git diff --quiet daily.mp4; then
+            echo "no change"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add daily.mp4
+          git commit -m "rotate daily video"
+          git push
